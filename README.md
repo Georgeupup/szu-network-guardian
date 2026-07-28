@@ -35,16 +35,17 @@
 > [!NOTE]
 > 本程序负责网络链路建立后的校园网认证。如果关闭 Wi-Fi、拔出网线或在 Windows 中主动断开无线网络，请先恢复物理网络连接。建议为 `SZU_WLAN` 开启“自动连接”。
 
-## 使用源码运行
+## 快速开始
 
-```powershell
-git clone https://github.com/Georgeupup/szu-network-guardian.git
-cd szu-network-guardian
-python -m pip install -r requirements.txt
-python main.py
-```
+### 方式一：下载 Release（推荐）
 
-首次运行时：
+不需要安装 Python，适合大多数用户：
+
+1. 打开 [Releases 页面](https://github.com/Georgeupup/szu-network-guardian/releases/latest)。
+2. 下载最新版 `SZU-Network-Guardian-v*.exe`。
+3. 双击 EXE 即可运行，无需安装。
+
+### 首次使用
 
 1. 输入校园网账号和统一身份认证密码。
 2. 区域建议保持“自动识别（推荐）”。
@@ -52,6 +53,15 @@ python main.py
 4. 根据需要勾选“开机自动启动”。
 5. 点击“开始守护”。
 6. 最小化或关闭窗口，程序会进入系统托盘继续监控。
+
+### 方式二：使用源码运行
+
+```powershell
+git clone https://github.com/Georgeupup/szu-network-guardian.git
+cd szu-network-guardian
+python -m pip install -r requirements.txt
+python main.py
+```
 
 ## 构建 Windows EXE
 
