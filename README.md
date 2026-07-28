@@ -7,12 +7,13 @@
 
 一个简洁、轻量的深圳大学校园网断线监控与自动重连工具。
 
-支持新版教学/办公区深澜 SRun 认证、宿舍区 ePortal 认证、区域自动识别、系统托盘、开机自启和安全凭据存储。
+支持新版教学/办公区深澜 SRun 认证、宿舍区 ePortal 认证、系统托盘、开机自启和安全凭据存储。
 
 ## 功能特性
 
 - 简约的 Windows 图形界面
-- 自动识别教学/办公区与宿舍区网络
+- 手动选择教学/办公区或宿舍区，避免校园网网关互通造成误判
+- 提供实验性的自动顺序尝试模式，优先尝试教学区
 - 定时检测直连网络状态，避免代理造成在线误判
 - 教学/办公区使用 SRun challenge 加密认证
 - 宿舍区使用 ePortal 认证接口
@@ -48,7 +49,7 @@
 ### 首次使用
 
 1. 输入校园网账号和统一身份认证密码。
-2. 区域建议保持“自动识别（推荐）”。
+2. 按电脑的实际位置选择区域：实验室电脑选择“教学 / 办公区”，宿舍电脑选择“宿舍区”。不建议长期无人值守的电脑使用实验性自动模式。
 3. 设置检测间隔，推荐 3～5 分钟。
 4. 根据需要勾选“开机自动启动”。
 5. 点击“开始守护”。
@@ -74,7 +75,7 @@ python main.py
 构建脚本会创建独立的 `.venv-build` 环境、执行自动化测试，并生成：
 
 ```text
-dist\SZU-Network-Guardian-v1.1.0.exe
+dist\SZU-Network-Guardian-v1.1.1.exe
 ```
 
 也可以在仓库的 [Actions 页面](https://github.com/Georgeupup/szu-network-guardian/actions/workflows/build-windows.yml) 手动运行 `Build Windows EXE`，然后下载构建产物。
@@ -150,7 +151,7 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run
 本项目在以下开源项目和公开技术资料的基础上完成，感谢原作者与贡献者：
 
 - [ackness/szu-autoconnect](https://github.com/ackness/szu-autoconnect)：本项目最初参考的深圳大学校园网自动重连脚本，包括旧版 Dr.COM 登录思路和基础监控结构。
-- [Sleepstars/SZU-login](https://github.com/Sleepstars/SZU-login)：提供新版深圳大学教学/办公区 SRun、宿舍区 ePortal 接口及网络区域识别的重要参考。
+- [Sleepstars/SZU-login](https://github.com/Sleepstars/SZU-login)：提供新版深圳大学教学/办公区 SRun、宿舍区 ePortal 接口及登录流程的重要参考。
 - [vidar-team/srun-login](https://github.com/vidar-team/srun-login)：SRun challenge、XXTEA/XEncode、校验和与自定义 Base64 流程的上游实现。
 - E99p1ant 及上述项目的所有贡献者：感谢其在 SRun 协议实现与开源维护方面的工作。
 

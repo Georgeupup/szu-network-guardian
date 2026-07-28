@@ -13,7 +13,7 @@ VALID_ZONES = {ZONE_AUTO, ZONE_OFFICE, ZONE_DORMITORY}
 class AppConfig:
     username: str = ""
     password: str = ""
-    zone: str = ZONE_AUTO
+    zone: str = ZONE_OFFICE
     interval_minutes: int = 5
     autostart: bool = False
     start_on_launch: bool = True

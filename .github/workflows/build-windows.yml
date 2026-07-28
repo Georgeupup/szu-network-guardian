@@ -35,11 +35,11 @@ jobs:
           --clean
           --onefile
           --windowed
-          --name SZU-Network-Guardian-v1.1.0
+          --name SZU-Network-Guardian-v1.1.1
           main.py
 
       - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
           name: SZU-Network-Guardian-Windows
-          path: dist/SZU-Network-Guardian-v1.1.0.exe
+          path: dist/SZU-Network-Guardian-v1.1.1.exe

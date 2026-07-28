@@ -29,9 +29,9 @@ COLORS = {
 }
 
 ZONE_LABELS = {
-    "自动识别（推荐）": ZONE_AUTO,
-    "教学 / 办公区": ZONE_OFFICE,
+    "教学 / 办公区（实验室）": ZONE_OFFICE,
     "宿舍区": ZONE_DORMITORY,
+    "自动尝试（实验性）": ZONE_AUTO,
 }
 ZONE_NAMES = {value: key for key, value in ZONE_LABELS.items()}
 UI_LOG_RETENTION = dt.timedelta(hours=3)
@@ -61,7 +61,7 @@ class GuardianApp:
         self.username_var = tk.StringVar(value=self.config.username)
         self.password_var = tk.StringVar(value=self.config.password)
         self.zone_var = tk.StringVar(
-            value=ZONE_NAMES.get(self.config.zone, "教学 / 办公区")
+            value=ZONE_NAMES.get(self.config.zone, "教学 / 办公区（实验室）")
         )
         self.interval_var = tk.StringVar(value=str(self.config.interval_minutes))
         self.autostart_var = tk.BooleanVar(

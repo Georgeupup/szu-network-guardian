@@ -16,12 +16,11 @@ from .models import (
     ZONE_DORMITORY,
     ZONE_OFFICE,
 )
-from .srun import SRUN_BASE_URL, SrunClient
+from .srun import SrunClient
 
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-DORMITORY_PROBE_URL = "http://172.30.255.42/"
 DORMITORY_LOGIN_URL = "http://172.30.255.42:801/eportal/portal/login/"
 
 CHECK_TARGETS = (
@@ -113,35 +112,6 @@ class NetworkClient:
         detail = " / ".join(errors[-2:]) if errors else "无响应"
         return ConnectionResult(False, f"直连外网不可用（{detail}）")
 
-    def detect_zone(self) -> str:
-        dormitory_available = self._gateway_available(
-            DORMITORY_PROBE_URL,
-            verify=True,
-        )
-        teaching_available = self._gateway_available(
-            f"{SRUN_BASE_URL}/",
-            verify=False,
-        )
-        if dormitory_available:
-            return ZONE_DORMITORY
-        if teaching_available:
-            return ZONE_OFFICE
-        raise ConnectionError(
-            "未检测到深大认证网关；请确认 Windows 已连接 SZU_WLAN 或校园有线网络"
-        )
-
-    def _gateway_available(self, url: str, verify: bool) -> bool:
-        try:
-            response = self.portal_session.get(
-                url,
-                timeout=(2, 4),
-                allow_redirects=False,
-                verify=verify,
-            )
-            return response.status_code < 500
-        except requests.RequestException:
-            return False
-
     def _login_dormitory(self, config: AppConfig) -> str:
         response = self.portal_session.get(
             DORMITORY_LOGIN_URL,
@@ -183,13 +153,26 @@ class NetworkClient:
     ) -> str:
         zone = config.zone
         if zone == ZONE_AUTO:
-            if progress_callback:
-                progress_callback("正在识别校园网区域…")
-            zone = self.detect_zone()
+            errors: list[str] = []
+            attempts = (
+                ("教学 / 办公区", self._login_teaching),
+                ("宿舍区", self._login_dormitory),
+            )
+            for zone_name, login in attempts:
+                if progress_callback:
+                    progress_callback(f"自动尝试：正在使用{zone_name}认证…")
+                try:
+                    return login(config)
+                except (ConnectionError, requests.RequestException) as exc:
+                    errors.append(f"{zone_name}：{exc}")
+            details = "；".join(errors)
+            raise ConnectionError(
+                f"自动尝试均未成功，请手动选择实际区域。{details}"
+            )
 
         if progress_callback:
             zone_name = "宿舍区" if zone == ZONE_DORMITORY else "教学 / 办公区"
-            progress_callback(f"检测到{zone_name}，正在提交认证…")
+            progress_callback(f"正在使用{zone_name}认证…")
 
         if zone == ZONE_DORMITORY:
             return self._login_dormitory(config)

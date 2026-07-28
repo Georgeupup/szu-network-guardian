@@ -1,7 +1,7 @@
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
-from szu_guardian.models import AppConfig
+from szu_guardian.models import AppConfig, ZONE_AUTO
 from szu_guardian.network import NetworkClient
 
 
@@ -64,16 +64,57 @@ class NetworkClientTests(unittest.TestCase):
         self.assertTrue(result.connected)
         self.assertIn("自动重连", result.message)
 
-    def test_auto_zone_prefers_dormitory_when_gateway_is_reachable(self):
+    def test_auto_mode_tries_teaching_first(self):
         session = Mock()
         session.headers = {}
-        session.get.side_effect = [
-            response("http://172.30.255.42/"),
-            response("https://net.szu.edu.cn/"),
-        ]
         client = NetworkClient(session=session, portal_session=session)
+        config = AppConfig(
+            username="user",
+            password="password",
+            zone=ZONE_AUTO,
+        )
 
-        self.assertEqual(client.detect_zone(), "dormitory")
+        with (
+            patch.object(
+                client,
+                "_login_teaching",
+                return_value="教学区认证成功",
+            ) as teaching,
+            patch.object(client, "_login_dormitory") as dormitory,
+        ):
+            result = client.send_login(config)
+
+        self.assertEqual(result, "教学区认证成功")
+        teaching.assert_called_once_with(config)
+        dormitory.assert_not_called()
+
+    def test_auto_mode_falls_back_to_dormitory(self):
+        session = Mock()
+        session.headers = {}
+        client = NetworkClient(session=session, portal_session=session)
+        config = AppConfig(
+            username="user",
+            password="password",
+            zone=ZONE_AUTO,
+        )
+
+        with (
+            patch.object(
+                client,
+                "_login_teaching",
+                side_effect=ConnectionError("不在教学区"),
+            ) as teaching,
+            patch.object(
+                client,
+                "_login_dormitory",
+                return_value="宿舍区认证成功",
+            ) as dormitory,
+        ):
+            result = client.send_login(config)
+
+        self.assertEqual(result, "宿舍区认证成功")
+        teaching.assert_called_once_with(config)
+        dormitory.assert_called_once_with(config)
 
 
 if __name__ == "__main__":
