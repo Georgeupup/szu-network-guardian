@@ -40,6 +40,24 @@ class SrunCryptoTests(unittest.TestCase):
 
 
 class SrunClientTests(unittest.TestCase):
+    def test_online_status_recognizes_expired_session(self):
+        session = Mock()
+        session.headers = {}
+        session.get.return_value = response(
+            '_({"error":"not_online_error","res":"not_online_error"})'
+        )
+
+        self.assertFalse(SrunClient("user", "password", session=session).is_online())
+
+    def test_online_status_recognizes_active_session(self):
+        session = Mock()
+        session.headers = {}
+        session.get.return_value = response(
+            '_({"error":"ok","res":"ok","user_name":"user"})'
+        )
+
+        self.assertTrue(SrunClient("user", "password", session=session).is_online())
+
     def test_login_requires_explicit_success_response(self):
         session = Mock()
         session.headers = {}

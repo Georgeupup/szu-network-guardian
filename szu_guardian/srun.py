@@ -191,6 +191,21 @@ class SrunClient:
             pass
         return "1"
 
+    def is_online(self) -> bool | None:
+        """Return the SRun session state, or ``None`` when it is unknown."""
+        status_data = self._get_jsonp(
+            "/cgi-bin/rad_user_info",
+            {"callback": "_"},
+        )
+        result = str(
+            status_data.get("error") or status_data.get("res") or ""
+        ).strip().lower()
+        if result == "not_online_error":
+            return False
+        if result == "ok":
+            return True
+        return None
+
     def login(self) -> SrunLoginResult:
         ac_id = self.discover_ac_id()
         challenge_data = self._get_jsonp(

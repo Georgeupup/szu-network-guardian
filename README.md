@@ -16,6 +16,8 @@
 - 提供实验性的自动顺序尝试模式，优先尝试教学区
 - 定时检测直连网络状态，避免代理造成在线误判
 - 可强制通过校园网物理网卡直连，绕过 Clash、Mihomo、V2Ray 等代理的 TUN/Fake-IP
+- 教学/办公区优先核验 SRun 认证会话；即使百度等白名单网页可打开，认证失效也会立即重连
+- 使用两个独立且不可缓存的外网请求复核网络，避免单个检测页造成假在线
 - 教学/办公区使用 SRun challenge 加密认证
 - 宿舍区使用 ePortal 认证接口
 - 仅在断网时尝试登录，不会在联网正常时重复认证
@@ -77,7 +79,7 @@ python main.py
 构建脚本会创建独立的 `.venv-build` 环境、执行自动化测试，并生成：
 
 ```text
-dist\SZU-Network-Guardian-v1.2.0.exe
+dist\SZU-Network-Guardian-v1.2.1.exe
 ```
 
 也可以在仓库的 [Actions 页面](https://github.com/Georgeupup/szu-network-guardian/actions/workflows/build-windows.yml) 手动运行 `Build Windows EXE`，然后下载构建产物。
@@ -114,6 +116,13 @@ dist\SZU-Network-Guardian-v1.2.0.exe
 
 ```text
 网络连接正常（校园网直连）
+```
+
+教学/办公区每次检测还会先核验深澜认证会话。校园网注销后，即使百度首页等少数网页仍可访问，也会出现下面的日志并触发登录：
+
+```text
+检测到校园网认证已失效，正在重新认证…
+正在使用教学 / 办公区认证…
 ```
 
 如果直连模式提示找不到物理网卡，请先确认电脑仍连接校园有线网络或 `SZU_WLAN`。只有在未使用代理、且直连模式确实无法适配当前网络时，才建议取消勾选。
