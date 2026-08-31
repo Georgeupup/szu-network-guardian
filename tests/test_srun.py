@@ -14,6 +14,7 @@ def response(text, url="https://net.szu.edu.cn/"):
     value.status_code = 200
     value.text = text
     value.url = url
+    value.headers = {}
     value.raise_for_status.return_value = None
     return value
 

@@ -15,6 +15,7 @@
 - 手动选择教学/办公区或宿舍区，避免校园网网关互通造成误判
 - 提供实验性的自动顺序尝试模式，优先尝试教学区
 - 定时检测直连网络状态，避免代理造成在线误判
+- 可强制通过校园网物理网卡直连，绕过 Clash、Mihomo、V2Ray 等代理的 TUN/Fake-IP
 - 教学/办公区使用 SRun challenge 加密认证
 - 宿舍区使用 ePortal 认证接口
 - 仅在断网时尝试登录，不会在联网正常时重复认证
@@ -52,8 +53,9 @@
 2. 按电脑的实际位置选择区域：实验室电脑选择“教学 / 办公区”，宿舍电脑选择“宿舍区”。不建议长期无人值守的电脑使用实验性自动模式。
 3. 设置检测间隔，推荐 3～5 分钟。
 4. 根据需要勾选“开机自动启动”。
-5. 点击“开始守护”。
-6. 最小化或关闭窗口，程序会进入系统托盘继续监控。
+5. 使用代理软件时保持“检测和认证强制直连（推荐）”处于勾选状态。
+6. 点击“开始守护”。
+7. 最小化或关闭窗口，程序会进入系统托盘继续监控。
 
 ### 方式二：使用源码运行
 
@@ -75,7 +77,7 @@ python main.py
 构建脚本会创建独立的 `.venv-build` 环境、执行自动化测试，并生成：
 
 ```text
-dist\SZU-Network-Guardian-v1.1.1.exe
+dist\SZU-Network-Guardian-v1.2.0.exe
 ```
 
 也可以在仓库的 [Actions 页面](https://github.com/Georgeupup/szu-network-guardian/actions/workflows/build-windows.yml) 手动运行 `Build Windows EXE`，然后下载构建产物。
@@ -98,6 +100,23 @@ dist\SZU-Network-Guardian-v1.1.1.exe
 ```
 
 日志使用 `guardian-YYYY-MM-DD.log` 命名。程序启动时和运行期间会自动清理 7 天前的日志。
+
+## 与代理软件同时使用
+
+程序默认勾选“检测和认证强制直连（推荐）”。开启后会：
+
+1. 排除代理常用的 `198.18.0.0/15` Fake-IP 地址段。
+2. 找到电脑真实的校园网有线或无线网卡。
+3. 通过物理网卡执行独立 DNS 查询。
+4. 将联网检测和校园网认证绑定到物理网卡，不经过系统代理或 TUN 虚拟网卡。
+
+正常日志会显示：
+
+```text
+网络连接正常（校园网直连）
+```
+
+如果直连模式提示找不到物理网卡，请先确认电脑仍连接校园有线网络或 `SZU_WLAN`。只有在未使用代理、且直连模式确实无法适配当前网络时，才建议取消勾选。
 
 开机自启使用当前用户注册表项：
 
@@ -126,6 +145,7 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run
 ├── .github/workflows/       # Windows 自动构建
 ├── szu_guardian/
 │   ├── local_log.py         # 本地日志与自动清理
+│   ├── direct_network.py    # 物理网卡绑定与直连 DNS
 │   ├── monitor.py           # 后台监控
 │   ├── network.py           # 网络检测与认证入口
 │   ├── srun.py              # SRun 协议实现

@@ -52,8 +52,8 @@ class GuardianApp:
 
         self.root = tk.Tk()
         self.root.title("SZU 网络守护")
-        self.root.geometry("680x800")
-        self.root.minsize(620, 720)
+        self.root.geometry("680x860")
+        self.root.minsize(620, 750)
         self.root.configure(bg=COLORS["background"])
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.bind("<Unmap>", self._on_unmap)
@@ -68,6 +68,7 @@ class GuardianApp:
             value=is_autostart_enabled() or self.config.autostart
         )
         self.start_on_launch_var = tk.BooleanVar(value=self.config.start_on_launch)
+        self.direct_mode_var = tk.BooleanVar(value=self.config.direct_mode)
         self.password_visible = False
 
         self._configure_styles()
@@ -307,12 +308,17 @@ class GuardianApp:
             options,
             text="开机自动启动",
             variable=self.autostart_var,
-        ).pack(side="left")
+        ).grid(row=0, column=0, sticky="w")
         ttk.Checkbutton(
             options,
             text="程序启动后自动监控",
             variable=self.start_on_launch_var,
-        ).pack(side="left", padx=(18, 0))
+        ).grid(row=0, column=1, sticky="w", padx=(18, 0))
+        ttk.Checkbutton(
+            options,
+            text="检测和认证强制直连（推荐）",
+            variable=self.direct_mode_var,
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 0))
 
         buttons = ttk.Frame(outer)
         buttons.pack(fill="x", pady=(0, 12))
@@ -412,6 +418,7 @@ class GuardianApp:
             interval_minutes=interval,
             autostart=self.autostart_var.get(),
             start_on_launch=self.start_on_launch_var.get(),
+            direct_mode=self.direct_mode_var.get(),
         )
         if validate:
             config.validate()

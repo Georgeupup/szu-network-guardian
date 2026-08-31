@@ -23,8 +23,8 @@ if (-not $SkipInstall) {
     --clean `
     --onefile `
     --windowed `
-    --name "SZU-Network-Guardian-v1.1.1" `
+    --name "SZU-Network-Guardian-v1.2.0" `
     (Join-Path $projectDirectory "main.py")
 
 Write-Host ""
-Write-Host "Build complete: $projectDirectory\dist\SZU-Network-Guardian-v1.1.1.exe"
+Write-Host "Build complete: $projectDirectory\dist\SZU-Network-Guardian-v1.2.0.exe"

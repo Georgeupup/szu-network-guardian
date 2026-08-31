@@ -17,6 +17,7 @@ class AppConfig:
     interval_minutes: int = 5
     autostart: bool = False
     start_on_launch: bool = True
+    direct_mode: bool = True
 
     def validate(self) -> None:
         self.username = self.username.strip()

@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import requests
 import urllib3
 
+from .direct_network import DirectRoute
 from .models import (
     AppConfig,
     ZONE_AUTO,
@@ -24,8 +25,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 DORMITORY_LOGIN_URL = "http://172.30.255.42:801/eportal/portal/login/"
 
 CHECK_TARGETS = (
-    ("https://www.baidu.com/favicon.ico", "baidu"),
     ("http://www.msftconnecttest.com/connecttest.txt", "Microsoft Connect Test"),
+    ("https://www.baidu.com/favicon.ico", "baidu"),
 )
 
 HEADERS = {
@@ -82,6 +83,34 @@ class NetworkClient:
             active_session.headers.update(HEADERS)
         self.sleeper = sleeper
         self.verify_delays = verify_delays
+        self._allow_direct_setup = session is None and portal_session is None
+        self.direct_route: DirectRoute | None = None
+
+    def _configure_direct(self, enabled: bool) -> None:
+        if not enabled or not self._allow_direct_setup or self.direct_route:
+            return
+        route = DirectRoute.discover()
+        self.direct_route = route
+        self.session = route.session()
+        self.portal_session = route.session()
+        self.session.headers.update(HEADERS)
+        self.portal_session.headers.update(HEADERS)
+
+    def _get_check_target(self, url: str) -> requests.Response:
+        if not self.direct_route:
+            return self.session.get(
+                url,
+                timeout=(3, 5),
+                allow_redirects=True,
+            )
+        direct_url, original_host = self.direct_route.rewrite_url(url)
+        return self.session.get(
+            direct_url,
+            headers={"Host": original_host},
+            timeout=(3, 5),
+            allow_redirects=False,
+            verify=False,
+        )
 
     def check_connection(self) -> ConnectionResult:
         started = time.perf_counter()
@@ -89,14 +118,19 @@ class NetworkClient:
 
         for url, expected in CHECK_TARGETS:
             try:
-                response = self.session.get(
-                    url,
-                    timeout=(3, 5),
-                    allow_redirects=True,
-                )
+                response = self._get_check_target(url)
                 if expected == "baidu":
-                    final_host = urlparse(response.url).hostname or ""
-                    valid = response.status_code == 200 and final_host.endswith("baidu.com")
+                    if self.direct_route:
+                        content_type = response.headers.get("Content-Type", "").lower()
+                        valid = response.status_code == 200 and (
+                            "image" in content_type or len(response.content) > 100
+                        )
+                    else:
+                        final_host = urlparse(response.url).hostname or ""
+                        valid = (
+                            response.status_code == 200
+                            and final_host.endswith("baidu.com")
+                        )
                 else:
                     valid = (
                         response.status_code == 200
@@ -104,7 +138,8 @@ class NetworkClient:
                     )
                 if valid:
                     latency = round((time.perf_counter() - started) * 1000)
-                    return ConnectionResult(True, "网络连接正常", latency)
+                    mode = "（校园网直连）" if self.direct_route else ""
+                    return ConnectionResult(True, f"网络连接正常{mode}", latency)
                 errors.append(f"检测页返回 {response.status_code}")
             except requests.RequestException as exc:
                 errors.append(type(exc).__name__)
@@ -135,10 +170,18 @@ class NetworkClient:
         return message or "宿舍区认证成功"
 
     def _login_teaching(self, config: AppConfig) -> str:
+        base_url = "https://net.szu.edu.cn"
+        host_header = None
+        if self.direct_route:
+            teaching_ip = self.direct_route.resolve("net.szu.edu.cn")[0]
+            base_url = f"https://{teaching_ip}"
+            host_header = "net.szu.edu.cn"
         result = SrunClient(
             config.username,
             config.password,
             session=self.portal_session,
+            base_url=base_url,
+            host_header=host_header,
         ).login()
         if not result.success:
             raise ConnectionError(
@@ -185,6 +228,7 @@ class NetworkClient:
         config: AppConfig,
         progress_callback: ProgressCallback | None = None,
     ) -> ConnectionResult:
+        self._configure_direct(config.direct_mode)
         current = self.check_connection()
         if current.connected:
             return current

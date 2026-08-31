@@ -44,7 +44,10 @@ class NetworkClientTests(unittest.TestCase):
                 "http://172.30.255.42:801/eportal/portal/login/",
                 text='jsonpReturn({"result":1,"msg":"认证成功"});',
             ),
-            response("https://www.baidu.com/favicon.ico"),
+            response(
+                "http://www.msftconnecttest.com/connecttest.txt",
+                text="Microsoft Connect Test",
+            ),
         ]
         client = NetworkClient(
             session=session,
