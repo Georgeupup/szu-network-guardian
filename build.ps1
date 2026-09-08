@@ -45,9 +45,9 @@ Invoke-Checked {
         --clean `
         --onefile `
         --windowed `
-        --name "SZU-Network-Guardian-v1.2.1" `
+        --name "SZU-Network-Guardian-v1.2.2" `
         (Join-Path $projectDirectory "main.py")
 } "PyInstaller build"
 
 Write-Host ""
-Write-Host "Build complete: $projectDirectory\dist\SZU-Network-Guardian-v1.2.1.exe"
+Write-Host "Build complete: $projectDirectory\dist\SZU-Network-Guardian-v1.2.2.exe"

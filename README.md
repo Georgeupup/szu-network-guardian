@@ -79,7 +79,7 @@ python main.py
 构建脚本会创建独立的 `.venv-build` 环境、执行自动化测试，并生成：
 
 ```text
-dist\SZU-Network-Guardian-v1.2.1.exe
+dist\SZU-Network-Guardian-v1.2.2.exe
 ```
 
 也可以在仓库的 [Actions 页面](https://github.com/Georgeupup/szu-network-guardian/actions/workflows/build-windows.yml) 手动运行 `Build Windows EXE`，然后下载构建产物。
@@ -109,8 +109,10 @@ dist\SZU-Network-Guardian-v1.2.1.exe
 
 1. 排除代理常用的 `198.18.0.0/15` Fake-IP 地址段。
 2. 找到电脑真实的校园网有线或无线网卡。
-3. 通过物理网卡执行独立 DNS 查询。
+3. 自动读取物理网卡通过 DHCP 获得的 DNS，并通过该网卡执行独立查询。
 4. 将联网检测和校园网认证绑定到物理网卡，不经过系统代理或 TUN 虚拟网卡。
+
+程序会优先使用与校园网 IPv4 地址属于同一物理网卡的 DNS。即使校园网调整 DNS 地址，也无需先连接外网或手动修改配置；当网卡未提供可用 DNS 时，程序才会依次尝试内置的校园网和公共 DNS 作为兜底。
 
 正常日志会显示：
 
