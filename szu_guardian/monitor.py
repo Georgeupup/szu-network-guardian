@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from dataclasses import dataclass, replace
 from typing import Callable
 
@@ -17,6 +18,9 @@ class MonitorEvent:
 
 
 class MonitorController:
+    WAIT_SLICE_SECONDS = 15.0
+    RESUME_GAP_SECONDS = 30.0
+
     def __init__(
         self,
         event_callback: Callable[[MonitorEvent], None],
@@ -89,6 +93,9 @@ class MonitorController:
                     )
                 else:
                     self._emit(MonitorEvent("offline", result.message, "warning"))
+                    # A sleep/wake cycle or DHCP renewal can invalidate the
+                    # bound source address, DNS route, and HTTP sessions.
+                    client = self.client_factory()
             except Exception as exc:
                 self._emit(
                     MonitorEvent(
@@ -97,6 +104,7 @@ class MonitorController:
                         "error",
                     )
                 )
+                client = self.client_factory()
 
             if self._stop_event.is_set():
                 break
@@ -106,7 +114,40 @@ class MonitorController:
                     f"下次检测将在 {config.interval_minutes} 分钟内进行",
                 )
             )
-            self._wake_event.wait(config.interval_minutes * 60)
-            if not self._stop_event.is_set():
+            wait_reason = self._wait_until_next_check(config.interval_minutes * 60)
+            if wait_reason == "stop" or self._stop_event.is_set():
+                break
+            if wait_reason == "resume":
+                client = self.client_factory()
+                self._emit(
+                    MonitorEvent(
+                        "checking",
+                        "检测到系统从休眠恢复，正在重新建立直连…",
+                        "warning",
+                    )
+                )
+            else:
                 self._emit(MonitorEvent("checking", "正在检测网络状态…"))
         self._emit(MonitorEvent("stopped", "监控已停止"))
+
+    def _wait_until_next_check(self, interval_seconds: float) -> str:
+        """Wait for a manual check, the normal deadline, or a wake-up gap."""
+        started = time.time()
+        deadline = started + interval_seconds
+        while not self._stop_event.is_set():
+            remaining = max(0.0, deadline - time.time())
+            if remaining == 0:
+                return "interval"
+
+            wait_started = time.time()
+            if self._wake_event.wait(
+                min(self.WAIT_SLICE_SECONDS, remaining)
+            ):
+                return "manual"
+
+            # Windows may suspend the thread while the Event wait is pending.
+            # A wall-clock gap larger than one wait slice indicates that the
+            # machine likely resumed; refresh the network client immediately.
+            if time.time() - wait_started >= self.RESUME_GAP_SECONDS:
+                return "resume"
+        return "stop"
